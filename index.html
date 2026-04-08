@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trainee Portal | Italianista Academy</title>
+    <!-- CSS Dependencies -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        :root { --primary-blue: #0d6efd; --pink-alert: #ffdddd; }
+        body { background-color: #f0f2f5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .login-container { max-width: 400px; margin: 100px auto; }
+        .card { border-radius: 12px; border: none; }
+        .badge-custom { padding: 8px 12px; font-weight: bold; border-radius: 6px; }
+        .sidebar-btn { text-align: left; border-radius: 0; border: none; padding: 12px 20px; }
+        .sidebar-btn.active { background-color: var(--primary-blue); color: white; }
+        .detail-label { color: #6c757d; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
+        .detail-value { font-weight: bold; color: #212529; }
+        #dashboardContent { display: none; }
+        .progress { height: 15px; border-radius: 10px; }
+        .urgent-banner { background-color: #dc3545; color: white; border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+    <!-- 1. LOGIN SECTION -->
+    <div id="loginSection" class="container login-container">
+        <div class="card shadow p-4">
+            <div class="text-center mb-4">
+                <h4 class="fw-bold">Italianista Academy</h4>
+                <p class="text-muted small">Trainee Portal Login</p>
+            </div>
+            <div id="loginError" class="alert alert-danger d-none small"></div>
+            <div class="mb-3">
+                <label class="form-label small fw-bold">Mobile Number</label>
+                <input type="text" id="loginMobile" class="form-control" placeholder="01xxxxxxxxx">
+            </div>
+            <div class="mb-3">
+                <label class="form-label small fw-bold">Password</label>
+                <input type="password" id="loginPass" class="form-control" placeholder="••••••••">
+            </div>
+            <button onclick="handleLogin()" id="loginBtn" class="btn btn-primary w-100 fw-bold">
+                LOGIN <i class="fas fa-sign-in-alt ms-1"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- 2. DASHBOARD SECTION -->
+    <div id="dashboardContent" class="container-fluid py-4">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3 col-lg-2 mb-4">
+                <div class="card shadow-sm overflow-hidden">
+                    <div class="list-group list-group-flush">
+                        <button class="list-group-item sidebar-btn active"><i class="fas fa-user-circle me-2"></i>My Profile</button>
+                        <button class="list-group-item sidebar-btn text-muted"><i class="fas fa-calendar-check me-2"></i>Attendance</button>
+                        <button class="list-group-item sidebar-btn text-muted"><i class="fas fa-book-open me-2"></i>Materials</button>
+                        <button class="list-group-item sidebar-btn text-muted"><i class="fas fa-file-signature me-2"></i>Exams</button>
+                        <button onclick="location.reload()" class="list-group-item sidebar-btn text-danger mt-5"><i class="fas fa-sign-out-alt me-2"></i>Logout</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Content Area -->
+            <div class="col-md-9 col-lg-10">
+                <div class="card shadow-sm p-4" id="mainCard">
+                    
+                    <h4 class="border-bottom pb-2 mb-4"><i class="fas fa-user-circle me-2"></i>My Profile</h4>
+
+                    <!-- Urgent Overdue Banner -->
+                    <div id="overdueBanner" class="urgent-banner shadow-lg d-flex align-items-center mb-4 py-3 px-4 d-none">
+                        <i class="fas fa-hand-holding-dollar fa-2x me-3"></i>
+                        <div>
+                            <h5 class="mb-0 fw-bold">URGENT: PAYMENT OVERDUE</h5>
+                            <p class="mb-0 small" id="overdueText"></p>
+                        </div>
+                    </div>
+
+                    <!-- Stats Badges -->
+                    <div class="d-flex flex-wrap gap-2 mb-4">
+                        <span class="badge bg-warning text-dark p-2 shadow-sm" id="badgeStarted"></span>
+                        <span class="badge bg-success p-2 shadow-sm" id="badgeIn"></span>
+                        <span class="badge bg-danger p-2 shadow-sm" id="badgeNs"></span>
+                        <span class="badge bg-primary p-2 shadow-sm" id="badgePaid"></span>
+                        <span class="badge bg-dark p-2 shadow-sm" id="badgeOvd"></span>
+                    </div>
+
+                    <div class="row g-4">
+                        <!-- Left Column: Details & Schedule -->
+                        <div class="col-lg-7">
+                            <div class="bg-light p-3 rounded mb-3">
+                                <h6 class="fw-bold text-muted small text-uppercase border-bottom pb-2 mb-3">Account Details</h6>
+                                <div class="row g-3">
+                                    <div class="col-md-6"><div class="detail-label">Full Name</div><div class="detail-value" id="dispName"></div></div>
+                                    <div class="col-md-6"><div class="detail-label">Mobile Number</div><div class="detail-value" id="dispMobile"></div></div>
+                                    <div class="col-md-6"><div class="detail-label">Login Email</div><div class="detail-value text-primary" id="dispEmail"></div></div>
+                                    <div class="col-md-6"><div class="detail-label">Password</div><div class="detail-value" id="dispPass"></div></div>
+                                    <div class="col-md-6"><div class="detail-label">Group</div><div class="detail-value text-success" id="dispGroup"></div></div>
+                                    <div class="col-md-6"><div class="detail-label">Course Type / Status</div><div class="detail-value" id="dispStatus"></div></div>
+                                </div>
+                            </div>
+
+                            <div class="p-3 rounded mb-3" style="background: #e7f1ff; border-left: 5px solid #0d6efd !important;">
+                                <h6 class="fw-bold text-primary"><i class="fas fa-calendar-alt me-2"></i>My Weekly Schedule</h6>
+                                <p class="mb-0 fw-bold text-dark fs-5" id="dispSchedule"></p>
+                                <small class="text-muted">Please arrive 5 minutes before session starts.</small>
+                            </div>
+
+                            <div class="card border p-3">
+                                <h6 class="fw-bold text-dark mb-3"><i class="fas fa-headset me-2 text-danger"></i>Support & Help</h6>
+                                <div class="d-grid gap-2">
+                                    <a href="#" id="waInst" target="_blank" class="btn btn-outline-success fw-bold text-start"><i class="fab fa-whatsapp me-2"></i> Contact Instructor</a>
+                                    <a href="https://wa.me/201284508183" target="_blank" class="btn btn-outline-primary fw-bold text-start"><i class="fas fa-comment-dots me-2"></i> Contact Academy Support</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right Column: Progress -->
+                        <div class="col-lg-5">
+                            <div class="card border p-4 h-100">
+                                <h6 class="fw-bold text-dark border-bottom pb-2 mb-3">Course Progress</h6>
+                                <div class="text-center mb-4">
+                                    <h1 class="display-3 fw-bold text-primary mb-0" id="progPercent">0%</h1>
+                                    <small class="text-muted fw-bold">COMPLETED</small>
+                                </div>
+                                <div class="progress mb-4">
+                                    <div id="progBar" class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar"></div>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="detail-label">Current Topic:</div>
+                                    <div class="p-2 bg-light rounded border-start border-3 border-success small fw-bold mt-1" id="progCurrent"></div>
+                                </div>
+                                <div>
+                                    <div class="detail-label">Coming Up Next:</div>
+                                    <div class="p-2 bg-white rounded border small fw-bold text-muted mt-1" id="progNext"></div>
+                                </div>
+                                <div class="mt-4 pt-3 border-top text-center small text-muted">
+                                    Session <strong id="progSess">0</strong> of <span id="progTotal">0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function handleLogin() {
+            const mobile = document.getElementById('loginMobile').value.trim();
+            const pass = document.getElementById('loginPass').value.trim();
+            const btn = document.getElementById('loginBtn');
+            const err = document.getElementById('loginError');
+
+            if (!mobile || !pass) return;
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Checking...';
+            err.classList.add('d-none');
+
+            // 1. Generate filename hash
+            const hash = CryptoJS.MD5(mobile).toString();
+            // 2. Fetch data from GitHub data folder
+            const url = `data/${hash}.json`;
+
+            try {
+                const response = await fetch(url);
+                if (!response.ok) throw new Error();
+                const data = await response.json();
+
+                // 3. Verify Password
+                if (data.profile.password === pass) {
+                    renderDashboard(data);
+                } else {
+                    throw new Error("Invalid password");
+                }
+            } catch (e) {
+                err.innerText = "Trainee record not found or password incorrect.";
+                err.classList.remove('d-none');
+                btn.disabled = false;
+                btn.innerHTML = 'LOGIN <i class="fas fa-sign-in-alt ms-1"></i>';
+            }
+        }
+
+        function renderDashboard(data) {
+            document.getElementById('loginSection').classList.add('d-none');
+            document.getElementById('dashboardContent').style.display = 'block';
+
+            // Profile
+            document.getElementById('dispName').innerText = data.profile.name;
+            document.getElementById('dispMobile').innerText = data.profile.mobile;
+            document.getElementById('dispEmail').innerText = data.profile.email;
+            document.getElementById('dispPass').innerText = data.profile.password;
+            document.getElementById('dispGroup').innerText = data.profile.group;
+            document.getElementById('dispStatus').innerText = `${data.profile.courseType} (${data.profile.courseStatus})`;
+            document.getElementById('dispSchedule').innerText = data.schedule;
+
+            // Stats
+            document.getElementById('badgeStarted').innerHTML = `<i class="fas fa-calendar-alt me-1"></i> Started: ${data.stats.started}`;
+            document.getElementById('badgeIn').innerHTML = `<i class="fas fa-user-check me-1"></i> Total IN: ${data.stats.totalIn}`;
+            document.getElementById('badgeNs').innerHTML = `<i class="fas fa-user-times me-1"></i> Total NS: ${data.stats.totalNs}`;
+            document.getElementById('badgePaid').innerHTML = `<i class="fas fa-money-bill-wave me-1"></i> Paid: ${data.stats.totalPaid.toLocaleString()} EGP`;
+            document.getElementById('badgeOvd').innerHTML = `<i class="fas fa-hand-holding-dollar me-1 text-danger"></i> Overdue: ${data.stats.totalOvd.toLocaleString()} EGP`;
+
+            // Overdue Banner
+            if (data.stats.totalOvd > 0) {
+                document.getElementById('mainCard').style.backgroundColor = "#ffdddd";
+                document.getElementById('overdueBanner').classList.remove('d-none');
+                document.getElementById('overdueText').innerText = `You have an outstanding balance of ${data.stats.totalOvd.toLocaleString()} EGP across your current phase.`;
+            }
+
+            // Support
+            const wa = `https://wa.me/${data.support.instructorMobile}?text=Hello ${data.support.instructorName}, I am ${data.profile.name} from group ${data.profile.group}`;
+            document.getElementById('waInst').href = wa;
+            document.getElementById('waInst').innerHTML = `<i class="fab fa-whatsapp me-2"></i> Contact Instructor (${data.support.instructorName})`;
+
+            // Progress
+            document.getElementById('progPercent').innerText = data.progress.percent + "%";
+            document.getElementById('progBar').style.width = data.progress.percent + "%";
+            document.getElementById('progCurrent').innerText = data.progress.currentTopic;
+            document.getElementById('progNext').innerText = data.progress.nextTopic;
+            document.getElementById('progSess').innerText = data.progress.currentSession;
+            document.getElementById('progTotal').innerText = data.progress.totalSessions;
+        }
+    </script>
+</body>
+</html>
