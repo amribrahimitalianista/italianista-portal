@@ -163,7 +163,7 @@
             // 1. Generate filename hash
             const hash = CryptoJS.MD5(mobile).toString();
             // 2. Fetch data from GitHub data folder
-            const url = `data/${hash}.json`;
+const url = `data/data_${hash}.json`;
 
             try {
                 const response = await fetch(url);
